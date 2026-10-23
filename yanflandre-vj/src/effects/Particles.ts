@@ -47,21 +47,22 @@ export class ParticleSystem {
 
   public update(fluidBass: number, elapsedTime: number) {
     const positions = this.geometry.attributes.position.array as Float32Array;
-    const warpSpeed = 1 + fluidBass * 8; // Velocidade influenciada pelo grave suave
 
-    // Giramos a nuvem inteira de partículas lentamente com o tempo
-    this.mesh.rotation.z = elapsedTime * 0.1;
+    // ANTES: 1 + (fluidBass * 8)
+    // AGORA: Um "empurrãozinho" suave na batida
+    const pushSpeed = 1 + fluidBass * 2;
+
+    // Rotação da nuvem bem mais relaxante
+    this.mesh.rotation.z = elapsedTime * 0.03;
 
     for (let i = 0; i < this.particleCount * 3; i += 3) {
-      // Move para frente
-      positions[i + 2] += this.velocities[i / 3] * warpSpeed;
+      positions[i + 2] += this.velocities[i / 3] * pushSpeed;
 
-      // Movimento orgânico (swirl/espiral) nas bordas
-      const angle = elapsedTime * this.velocities[i / 3] * 5;
-      positions[i] += Math.cos(angle) * 0.02; // Twist no eixo X
-      positions[i + 1] += Math.sin(angle) * 0.02; // Twist no eixo Y
+      // Movimento de espiral bem suave
+      const angle = elapsedTime * this.velocities[i / 3] * 2;
+      positions[i] += Math.cos(angle) * 0.01;
+      positions[i + 1] += Math.sin(angle) * 0.01;
 
-      // Recicla a partícula se passar da câmera
       if (positions[i + 2] > 15) {
         positions[i + 2] = -40;
         positions[i] = (Math.random() - 0.5) * 60;
@@ -71,7 +72,7 @@ export class ParticleSystem {
 
     this.geometry.attributes.position.needsUpdate = true;
 
-    // Tamanho da partícula respira suavemente
-    this.material.size = 0.05 + fluidBass * 0.15;
+    // Partículas inflam sutilmente
+    this.material.size = 0.04 + fluidBass * 0.08;
   }
 }

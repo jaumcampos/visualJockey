@@ -44,45 +44,41 @@ function tick() {
   const elapsedTime = clock.getElapsedTime();
 
   if (nickObject) {
-    nickObject.position.y = Math.sin(elapsedTime * 0.5) * 0.2; // Movimento mais lento
+    // Mantém a flutuação vertical suave e constante (respiração)
+    nickObject.position.y = Math.sin(elapsedTime * 0.5) * 0.2;
   }
 
   if (audioAnalyzer.isInitialized) {
     const frequencies = audioAnalyzer.getFrequencyData();
     // Frequência do Bumbo (Grave)
     const bass = frequencies[10];
-    // Agora usamos o grave super fluido com Attack/Release!
+    // O grave fluido com Attack/Release
     const fluidBass = audioAnalyzer.getFluidBass();
 
-    // Normaliza a intensidade para 0.0 - 1.0 (para o shader)
-    const normalizedBass = bass / 255.0;
-
-    // 2. Atualiza o Túnel com o tempo e o áudio
+    // 2. Atualiza o Túnel e Partículas
     tunnelEffect.update(elapsedTime, fluidBass);
     bloom.pulse(fluidBass);
-
     particles.update(fluidBass, elapsedTime);
 
     if (nickObject) {
-      // O Nick agora vai pulsar com a mesma classe e suavidade
-      const scale = 1 + fluidBass * 0.15;
-      nickObject.scale.set(scale, scale, scale); // Não precisa mais de lerp aqui, o valor já é fluido!
+      // --- NICK: APENAS PULSO SUAVE, SEM TREMOR ---
 
-      // Tremor sutil focado apenas nos picos reais
-      if (fluidBass > 0.6) {
-        nickObject.rotation.z = (Math.random() - 0.5) * 0.03;
-        nickObject.rotation.x = (Math.random() - 0.5) * 0.03;
-      } else {
-        nickObject.rotation.z = THREE.MathUtils.lerp(
-          nickObject.rotation.z,
-          0,
-          0.1,
-        );
-        nickObject.rotation.x = THREE.MathUtils.lerp(
-          nickObject.rotation.x,
-          0,
-          0.1,
-        );
+      // 1. Escala (cresce e encolhe com classe)
+      const scale = 1 + fluidBass * 0.15;
+      nickObject.scale.set(scale, scale, scale);
+
+      // Garante que a rotação fique 100% reta e estável
+      nickObject.rotation.set(0, 0, 0);
+
+      // 2. Neon Dinâmico (Faz o material roxo brilhar no bumbo!)
+      const textMesh = nickObject.children[0] as THREE.Mesh;
+      if (textMesh && textMesh.material) {
+        // Sabemos que o material é um array onde o índice 1 é o Neon (borda)
+        const materials = textMesh.material as THREE.MeshStandardMaterial[];
+        if (materials.length > 1) {
+          // Brilho base = 1.5, sobe no máximo até 3.5 com o grave da música
+          materials[1].emissiveIntensity = 1.5 + fluidBass * 2.0;
+        }
       }
     }
   }
